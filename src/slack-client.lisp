@@ -15,7 +15,7 @@
        (das:http-request "https://slack.com/api/rtm.start"
                          :method :post
                          :parameters `(("token" . ,token)))
-     (declare (ignore status headers))
+     (declare (ignorable status headers))
      (jonathan:parse
       (babel:octets-to-string body :encoding :iso-8859-1)
       :as :hash-table))
@@ -25,13 +25,24 @@
           (format t "Error: ~a~%" e))))
 
 (defun run ()
-  (as:start-event-loop
-   (lambda ()
-     (chain (slack-api-token)
-       (:then (token)
-              (rtm-start token))
-       (:then (info)
-              (if (gethash "ok" info)
-                  (format t "~A~%" (gethash "url" info))
-                  (format t "failed.~%")))
-       ))))
+  (as:with-event-loop ()
+    (as:signal-handler 2 (lambda (sig)
+                           (declare (ignore sig))
+                           (as:exit-event-loop)))
+    (chain (slack-api-token)
+      (:then (token)
+             (rtm-start token))
+      (:then (info)
+             (cond ((gethash "ok" info)
+                    (let* ((url (gethash "url" info))
+                             (ws (wsd:make-client url)))
+                        (event-emitter:on :message ws
+                                          (lambda (message)
+                                            (format t "~S~%"
+                                                    (jonathan:parse message))))
+                        (event-emitter:on :close ws
+                                          (lambda (code reason)
+                                            (format t "Closed because '~A' (Code=~A)~%" reason code)))
+                        (wsd:start-connection ws)))
+                   (t (format t "failed.~%"))))
+      )))
