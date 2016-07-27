@@ -19,6 +19,7 @@
   :depends-on ("blackbird"
                "babel"
                "drakma-async"
+               "jonathan"
                "websocket-driver")
   :components ((:module "src"
                 :components
