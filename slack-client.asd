@@ -16,7 +16,9 @@
   :version "0.1"
   :author "Kazuo Koga"
   :license "Apache-2.0"
-  :depends-on ("drakma-async"
+  :depends-on ("blackbird"
+               "babel"
+               "drakma-async"
                "websocket-driver")
   :components ((:module "src"
                 :components
