@@ -9,6 +9,6 @@
 
 (plan nil)
 
-(slack-client::run)
+(slack:run-client)
 
 (finalize)

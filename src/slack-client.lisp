@@ -1,7 +1,8 @@
 (in-package :cl-user)
 (defpackage slack-client
-  (:use :cl
-   :blackbird))
+  (:nicknames #:sc #:slack)
+  (:use :cl)
+  (:export #:run-client))
 (in-package :slack-client)
 
 (defun slack-api-token ()
@@ -9,8 +10,8 @@
       (error "env SLACK_API_TOKEN does not set.")))
 
 (defun rtm-start (token)
-  (catcher
-   (multiple-promise-bind
+  (bb:catcher
+   (bb:multiple-promise-bind
        (body status headers)
        (das:http-request "https://slack.com/api/rtm.start"
                          :method :post
@@ -24,12 +25,12 @@
    (error (e)
           (format t "Error: ~a~%" e))))
 
-(defun run ()
+(defun run-client ()
   (as:with-event-loop ()
     (as:signal-handler 2 (lambda (sig)
                            (declare (ignore sig))
                            (as:exit-event-loop)))
-    (chain (slack-api-token)
+    (bb:chain (slack-api-token)
       (:then (token)
              (rtm-start token))
       (:then (info)
