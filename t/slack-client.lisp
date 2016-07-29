@@ -9,6 +9,7 @@
 
 (plan nil)
 
-(slack:run-client)
+(defparameter *c* (make-instance 'slack-client))
+(run-client *c*)
 
 (finalize)
