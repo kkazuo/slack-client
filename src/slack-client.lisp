@@ -58,10 +58,11 @@
   (wsd:send-text
    ws
    (jonathan:to-json
-    (list :|type| "ping"
-          :|id| (setf (last-ping-of client)
-                      (incf (send-id-of client)))
-          :|time| (get-internal-run-time)))))
+    `(("type" . "ping")
+      ("id"   . ,(setf (last-ping-of client)
+                       (incf (send-id-of client))))
+      ("time" . ,(get-internal-run-time)))
+    :from :alist)))
 
 (defun pong (client ws reply-to time)
   (cond ((eql reply-to (last-ping-of client))
@@ -92,7 +93,6 @@
 
 (defun on-message (client ws message)
   (send-message client nil)
-  (format t "~S~%" message)
   (let ((type (asv "type" message)))
     (cond ((equal type "pong")
            (pong client ws
@@ -103,7 +103,11 @@
                    (user-id-user client (asv "user" message))
                    (channel-id-channel client (asv "channel" message))
                    (team-id-team client (asv "team" message))))
+          ((equal type "reconnect_url")
+           (format t "~S~%" (afind message "url")))
+          ((equal type "hello"))
           (t
+           (format t "~S~%" message)
            nil))))
 
 (defun find-id-from-alists (key id alists)
