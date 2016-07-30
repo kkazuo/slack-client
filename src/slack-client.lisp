@@ -86,8 +86,30 @@
            (pong client ws
                  (asv "reply_to" message)
                  (asv "time" message)))
+          ((equal type "message")
+           (format t "user: ~A~%chan: ~A~%team: ~A~%"
+                   (user-id-user client (asv "user" message))
+                   (channel-id-channel client (asv "channel" message))
+                   (team-id-team client (asv "team" message))))
           (t
            nil))))
+
+(defun find-id-from-alists (key id alists)
+  (let* ((alist (asv key alists)))
+    (car (member id alist
+                 :test (lambda (x y)
+                         (equal x (asv "id" y)))))))
+
+(defun user-id-user (client user-id)
+  (find-id-from-alists "users" user-id (state-of client)))
+
+(defun channel-id-channel (client channel-id)
+  (find-id-from-alists "channels" channel-id (state-of client)))
+
+(defun team-id-team (client team-id)
+  (find-id-from-alists
+   "teams" team-id
+   (list (cons "teams" (list (asv "team" (state-of client)))))))
 
 (defun ws-connect (client)
   (cond ((prop-of client "ok")
