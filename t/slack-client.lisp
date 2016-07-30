@@ -16,7 +16,11 @@
   :on *c*)
 (ev:bind "message"
   (lambda (ev)
-    (format t "~A~%" (afind (ev:data ev) "text")))
+    (let* ((data (ev:data ev))
+           (text (afind data "text")))
+      (format t "~A~%" text)
+      (when (equal text "hello")
+        (send-message *c* "world"))))
   :on *c*)
 (run-client *c*)
 

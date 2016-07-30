@@ -4,7 +4,12 @@
   (:use :cl)
   (:export #:run-client
            #:slack-client
-           #:afind))
+           #:afind
+           #:send-message
+           #:user-id-user
+           #:channel-id-channel
+           #:im-id-im
+           #:team-id-team))
 (in-package :slack-client)
 
 (defclass slack-client (ev:dispatch)
