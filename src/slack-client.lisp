@@ -39,6 +39,18 @@
 (defun asv (key alist)
   (cdr (assoc key alist :test #'equal)))
 
+(defun afind (alist &rest keys)
+  (loop
+    with val = nil
+    with xs = alist
+    for key in keys
+    do (let ((v (cdr (assoc key xs :test #'equal))))
+         (if v
+             (setf xs v
+                   val v)
+             (return)))
+    finally (return val)))
+
 (defun ping (client ws)
   (cond ((last-ping-of client)
          (cond ((< 3 (incf (fail-ping-of client)))
@@ -105,6 +117,9 @@
 
 (defun channel-id-channel (client channel-id)
   (find-id-from-alists "channels" channel-id (state-of client)))
+
+(defun im-id-im (client im-id)
+  (find-id-from-alists "ims" im-id (state-of client)))
 
 (defun team-id-team (client team-id)
   (find-id-from-alists
