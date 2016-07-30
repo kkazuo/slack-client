@@ -3,10 +3,11 @@
   (:nicknames #:sc #:slack)
   (:use :cl)
   (:export #:run-client
-           #:slack-client))
+           #:slack-client
+           #:afind))
 (in-package :slack-client)
 
-(defclass slack-client ()
+(defclass slack-client (ev:dispatch)
   ((state :initform nil :accessor state-of)
    (send-id :initform 0 :accessor send-id-of)
    (last-ping :initform nil :accessor last-ping-of)
@@ -98,17 +99,8 @@
            (pong client ws
                  (asv "reply_to" message)
                  (asv "time" message)))
-          ((equal type "message")
-           (format t "user: ~A~%chan: ~A~%team: ~A~%"
-                   (user-id-user client (asv "user" message))
-                   (channel-id-channel client (asv "channel" message))
-                   (team-id-team client (asv "team" message))))
-          ((equal type "reconnect_url")
-           (format t "~S~%" (afind message "url")))
-          ((equal type "hello"))
           (t
-           (format t "~S~%" message)
-           nil))))
+           (ev:trigger (ev:event type :data message) :on client)))))
 
 (defun find-id-from-alists (key id alists)
   (let* ((alist (asv key alists)))
@@ -162,5 +154,4 @@
              (rtm-start token))
       (:then (info)
              (setf (state-of client) info)
-             (format t "~S~%" info)
              (ws-connect client)))))

@@ -10,6 +10,14 @@
 (plan nil)
 
 (defparameter *c* (make-instance 'slack-client))
+(ev:bind :*
+  (lambda (ev)
+    (format t "~A~%" ev))
+  :on *c*)
+(ev:bind "message"
+  (lambda (ev)
+    (format t "~A~%" (afind (ev:data ev) "text")))
+  :on *c*)
 (run-client *c*)
 
 (finalize)
