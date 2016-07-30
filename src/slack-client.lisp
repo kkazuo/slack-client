@@ -52,16 +52,14 @@
           :|time| (get-internal-run-time)))))
 
 (defun pong (client ws reply-to time)
-  (let* ((now (get-internal-run-time))
-         (dif (- now time)))
-    (cond ((eql reply-to (last-ping-of client))
-           (setf (last-ping-of client) nil
-                 (fail-ping-of client) 0)))))
+  (cond ((eql reply-to (last-ping-of client))
+         (setf (last-ping-of client) nil
+               (fail-ping-of client) 0)
+         (- (get-internal-run-time) time))))
 
 (defun sender-loop (client ws iter)
   (as:with-delay (1)
     (let ((i iter))
-      (format t ". ~A~%" i)
       (tagbody
        receive
          (let ((msg (safe-queue:mailbox-receive-message-no-hang
@@ -73,7 +71,6 @@
             client ws
             (or (cond ((null msg)
                        (cond ((< 5 i)
-                              (format t "timeout ~A~%" i)
                               (ping client ws)
                               0))))
                 (1+ i))))))))
