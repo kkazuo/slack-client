@@ -96,9 +96,11 @@
   (send-message client nil)
   (let ((type (asv "type" message)))
     (cond ((equal type "pong")
-           (pong client ws
-                 (asv "reply_to" message)
-                 (asv "time" message)))
+           (let ((rtt (pong client ws
+                            (asv "reply_to" message)
+                            (asv "time" message))))
+             (when rtt
+               (ev:trigger (ev:event "pong" :data rtt) :on client))))
           (t
            (ev:trigger (ev:event type :data message) :on client)))))
 
