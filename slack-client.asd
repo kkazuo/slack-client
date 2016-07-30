@@ -18,8 +18,10 @@
   :license "Apache-2.0"
   :depends-on ("blackbird"
                "babel"
+               "cl-async"
                "drakma-async"
                "jonathan"
+               "safe-queue"
                "websocket-driver")
   :components ((:module "src"
                 :components

@@ -10,7 +10,8 @@
   ((state :initform nil :accessor state-of)
    (send-id :initform 0 :accessor send-id-of)
    (last-ping :initform nil :accessor last-ping-of)
-   (fail-ping :initform 0 :accessor fail-ping-of)))
+   (fail-ping :initform 0 :accessor fail-ping-of)
+   (mailbox :initform (safe-queue:make-mailbox) :reader mailbox-of)))
 
 (defun prop-of (client key)
   (cdr (assoc key (state-of client) :test #'equal)))
@@ -57,10 +58,31 @@
            (setf (last-ping-of client) nil
                  (fail-ping-of client) 0)))))
 
-(defun tick (client ws)
-  (ping client ws))
+(defun sender-loop (client ws iter)
+  (as:with-delay (1)
+    (let ((i iter))
+      (format t ". ~A~%" i)
+      (tagbody
+       receive
+         (let ((msg (safe-queue:mailbox-receive-message-no-hang
+                     (mailbox-of client))))
+           (when (eql msg t)
+             (setf i 0)
+             (go receive))
+           (sender-loop
+            client ws
+            (or (cond ((null msg)
+                       (cond ((< 5 i)
+                              (format t "timeout ~A~%" i)
+                              (ping client ws)
+                              0))))
+                (1+ i))))))))
+
+(defun send-message (client message)
+  (safe-queue:mailbox-send-message (mailbox-of client) (or message t)))
 
 (defun on-message (client ws message)
+  (send-message client nil)
   (format t "~S~%" message)
   (let ((type (asv "type" message)))
     (cond ((equal type "pong")
@@ -80,7 +102,8 @@
               (on-message client ws (jonathan:parse message :as :alist))))
            (event-emitter:on
             :open ws
-            (lambda () (as:with-interval (1) (tick client ws))))
+            (lambda ()
+              (sender-loop client ws 0)))
            (event-emitter:on
             :close ws
             (lambda (code reason)
