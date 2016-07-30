@@ -20,6 +20,7 @@
                "babel"
                "cl-async"
                "drakma-async"
+               "event-glue"
                "jonathan"
                "safe-queue"
                "websocket-driver")
