@@ -20,11 +20,16 @@ exec ros -Q -- $0 "$@"
     (sc:bind "message" client
       (lambda (ev)
         (sc:with-data-let ev (channel user text)
-          (format t "~A:~A: ~A~%" channel user text)
-          (when (equal text "hello")
-            (sc:send-text client channel "world"))
-          (when (equal text "now")
-            (sc:send-text client channel (get-universal-time))))))
+          (let* ((c (sc:channel-id-channel client channel))
+                 (cname (sc:afind c "name"))
+                 (u (sc:user-id-user client user))
+                 (uname (sc:afind u "name"))
+                 (botp (sc:afind u "is_bot")))
+            (format t "~A:~A~:[~;(bot)~]: ~A~%" cname uname botp text)
+            (when (equal text "hello")
+              (sc:send-text client channel "world"))
+            (when (equal text "now")
+              (sc:send-text client channel (get-universal-time)))))))
 
     (as:with-event-loop ()
       (as:signal-handler

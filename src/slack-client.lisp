@@ -5,6 +5,7 @@
   (:export #:run-client
            #:slack-client
            #:send-text
+           #:afind
            #:data
            #:bind
            #:with-data-let
