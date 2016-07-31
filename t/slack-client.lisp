@@ -17,10 +17,12 @@
 (ev:bind "message"
   (lambda (ev)
     (let* ((data (ev:data ev))
+           (channel (afind data "channel"))
            (text (afind data "text")))
-      (format t "~A~%" text)
+      (format t "~A: ~A~%" channel text)
       (when (equal text "hello")
-        (send-message *c* "world"))))
+        (send-text *c* "world"
+                   :channel-id channel))))
   :on *c*)
 (run-client *c*)
 

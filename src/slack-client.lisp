@@ -5,7 +5,7 @@
   (:export #:run-client
            #:slack-client
            #:afind
-           #:send-message
+           #:send-text
            #:user-id-user
            #:channel-id-channel
            #:im-id-im
@@ -91,14 +91,28 @@
             (or (cond ((null msg)
                        (cond ((< 5 i)
                               (ping client ws)
-                              0))))
+                              0)))
+                      (t
+                       (wsd:send-text ws msg)
+                       0))
                 (1+ i))))))))
 
-(defun send-message (client message)
-  (safe-queue:mailbox-send-message (mailbox-of client) (or message t)))
+(defun send-text (client message &key channel-id)
+  (cond ((and channel-id message)
+         (safe-queue:mailbox-send-message
+          (mailbox-of client)
+          (jonathan:to-json
+           `(("type"    . "message")
+             ("id"      . ,(incf (send-id-of client)))
+             ("channel" . ,channel-id)
+             ("text"    . ,message))
+           :from :alist)))))
+
+(defun send-notify (client)
+  (safe-queue:mailbox-send-message (mailbox-of client) t))
 
 (defun on-message (client ws message)
-  (send-message client nil)
+  (send-notify client)
   (let ((type (asv "type" message)))
     (cond ((equal type "pong")
            (let ((rtt (pong client ws
