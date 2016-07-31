@@ -1,7 +1,6 @@
 (in-package :cl-user)
 (defpackage slack-client-test
   (:use :cl
-        :slack-client
         :prove))
 (in-package :slack-client-test)
 
@@ -9,21 +8,24 @@
 
 (plan nil)
 
-(defparameter *c* (make-instance 'slack-client))
-(ev:bind :*
+(defparameter *c* (make-instance 'sc:slack-client))
+(sc:bind :* *c*
   (lambda (ev)
-    (format t "~A~%" ev))
-  :on *c*)
-(ev:bind "message"
+    (format t "~A: ~A~%" (ev:ev ev) ev)))
+(sc:bind "message" *c*
   (lambda (ev)
-    (let* ((data (ev:data ev))
-           (channel (afind data "channel"))
-           (text (afind data "text")))
-      (format t "~A: ~A~%" channel text)
+    (sc:with-data-let ev (channel user text)
+      (format t "~A:~A: ~A~%" channel user text)
       (when (equal text "hello")
-        (send-text *c* "world"
-                   :channel-id channel))))
-  :on *c*)
-(run-client *c*)
+        (sc:send-text *c* channel "world"))
+      (when (equal text "now")
+        (sc:send-text *c* channel (get-universal-time))))))
+
+(as:with-event-loop ()
+  (as:signal-handler
+   as:+sigint+ (lambda (sig)
+                 (declare (ignore sig))
+                 (as:exit-event-loop)))
+  (sc:run-client *c*))
 
 (finalize)

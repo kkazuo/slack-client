@@ -4,8 +4,10 @@
   (:use :cl)
   (:export #:run-client
            #:slack-client
-           #:afind
            #:send-text
+           #:data
+           #:bind
+           #:with-data-let
            #:user-id-user
            #:channel-id-channel
            #:im-id-im
@@ -97,7 +99,7 @@
                        0))
                 (1+ i))))))))
 
-(defun send-text (client message &key channel-id)
+(defun send-text (client channel-id message)
   (cond ((and channel-id message)
          (safe-queue:mailbox-send-message
           (mailbox-of client)
@@ -105,7 +107,7 @@
            `(("type"    . "message")
              ("id"      . ,(incf (send-id-of client)))
              ("channel" . ,channel-id)
-             ("text"    . ,message))
+             ("text"    . ,(format nil "~A" message)))
            :from :alist)))))
 
 (defun send-notify (client)
@@ -114,12 +116,14 @@
 (defun on-message (client ws message)
   (send-notify client)
   (let ((type (asv "type" message)))
-    (cond ((equal type "pong")
+    (cond ((null type))
+          ((equal type "pong")
            (let ((rtt (pong client ws
                             (asv "reply_to" message)
                             (asv "time" message))))
              (when rtt
-               (ev:trigger (ev:event "pong" :data rtt) :on client))))
+               (ev:trigger (ev:event "pong" :data `(("rtt" . ,rtt)))
+                           :on client))))
           (t
            (ev:trigger (ev:event type :data message) :on client)))))
 
@@ -165,14 +169,23 @@
          (format t "failed.~%"))))
 
 (defun run-client (client)
-  (as:with-event-loop ()
-    (as:signal-handler
-     as:+sigint+ (lambda (sig)
-                   (declare (ignore sig))
-                   (as:exit-event-loop)))
-    (bb:chain (slack-api-token)
-      (:then (token)
-             (rtm-start token))
-      (:then (info)
-             (setf (state-of client) info)
-             (ws-connect client)))))
+  (bb:chain (slack-api-token)
+    (:then (token)
+           (rtm-start token))
+    (:then (info)
+           (setf (state-of client) info)
+           (ws-connect client))))
+
+(defun data (event &rest keys)
+  (if (null keys)
+      (ev:data event)
+      (apply #'afind (ev:data event) keys)))
+
+(defmacro with-data-let (ev vars &body body)
+  `(let ,(loop
+           for v in vars
+           collect `(,v (data ,ev (string-downcase (symbol-name ',v)))))
+     ,@body))
+
+(defun bind (key client function)
+  (ev:bind key function :on client))
