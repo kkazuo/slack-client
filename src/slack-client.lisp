@@ -25,8 +25,12 @@
 (defun prop-of (client key)
   (cdr (assoc key (state-of client) :test #'equal)))
 
+(defun getenv (name)
+  #+ccl(ccl:getenv name)
+  #+sbcl (sb-ext:posix-getenv name))
+
 (defun slack-api-token ()
-  (or (ccl:getenv "SLACK_API_TOKEN")
+  (or (getenv "SLACK_API_TOKEN")
       (error "env SLACK_API_TOKEN does not set.")))
 
 (defun rtm-start (token)
