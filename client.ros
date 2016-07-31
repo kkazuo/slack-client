@@ -1,0 +1,39 @@
+#!/bin/sh
+#|-*- mode:lisp -*-|#
+#| Slack rtm client.
+exec ros -Q -- $0 "$@"
+|#
+(progn ;;init forms
+  (push #p"./" asdf:*central-registry*)
+  (ql:quickload "slack-client" :silent t))
+
+(defpackage :ros.script.client.3678960423
+  (:use :cl))
+(in-package :ros.script.client.3678960423)
+
+(defun example ()
+  (let ((client (make-instance 'sc:slack-client)))
+    (sc:bind "hello" client
+      (lambda (ev)
+        (declare (ignore ev))
+        (format t "connected.~%")))
+    (sc:bind "message" client
+      (lambda (ev)
+        (sc:with-data-let ev (channel user text)
+          (format t "~A:~A: ~A~%" channel user text)
+          (when (equal text "hello")
+            (sc:send-text client channel "world"))
+          (when (equal text "now")
+            (sc:send-text client channel (get-universal-time))))))
+
+    (as:with-event-loop ()
+      (as:signal-handler
+       as:+sigint+ (lambda (sig)
+                     (declare (ignore sig))
+                     (as:exit-event-loop)))
+      (sc:run-client client))))
+
+(defun main (&rest argv)
+  (declare (ignorable argv))
+  (example))
+;;; vim: set ft=lisp lisp:

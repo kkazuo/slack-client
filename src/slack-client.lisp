@@ -163,10 +163,7 @@
             :close ws
             (lambda (code reason)
               (format t "Closed because '~A' (Code=~A)~%" reason code)))
-           (wsd:start-connection ws))
-         (format t "started.~%"))
-        (t
-         (format t "failed.~%"))))
+           (wsd:start-connection ws)))))
 
 (defun run-client (client)
   (bb:chain (slack-api-token)
