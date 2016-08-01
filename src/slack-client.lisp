@@ -67,7 +67,10 @@
 (defun ping (client ws)
   (cond ((last-ping-of client)
          (cond ((< 3 (incf (fail-ping-of client)))
-                (as:exit-event-loop)))))
+                ;; Restart
+                (wsd:close-connection ws)
+                (run-client client)
+                (return-from ping)))))
   (wsd:send-text
    ws
    (jonathan:to-json
@@ -93,16 +96,17 @@
            (when (eql msg t)
              (setf i 0)
              (go receive))
-           (sender-loop
-            client ws
-            (or (cond ((null msg)
-                       (cond ((< 5 i)
-                              (ping client ws)
-                              0)))
-                      (t
-                       (wsd:send-text ws msg)
-                       0))
-                (1+ i))))))))
+           (when (eql :open (wsd:ready-state ws))
+             (sender-loop
+              client ws
+              (or (cond ((null msg)
+                         (cond ((< 5 i)
+                                (ping client ws)
+                                0)))
+                        (t
+                         (wsd:send-text ws msg)
+                         0))
+                  (1+ i)))))))))
 
 (defun send-text (client channel-id message)
   (cond ((and channel-id message)
@@ -163,11 +167,9 @@
            (event-emitter:on
             :open ws
             (lambda ()
+              (setf (last-ping-of client) nil
+                    (fail-ping-of client) 0)
               (sender-loop client ws 0)))
-           (event-emitter:on
-            :close ws
-            (lambda (code reason)
-              (format t "Closed because '~A' (Code=~A)~%" reason code)))
            (wsd:start-connection ws)))))
 
 (defun run-client (client)
