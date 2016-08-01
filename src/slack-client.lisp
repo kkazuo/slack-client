@@ -81,6 +81,7 @@
     :from :alist)))
 
 (defun pong (client ws reply-to time)
+  (declare (ignore ws))
   (cond ((eql reply-to (last-ping-of client))
          (setf (last-ping-of client) nil
                (fail-ping-of client) 0)
