@@ -13,6 +13,9 @@ exec ros -Q -- $0 "$@"
 
 (defun example ()
   (let ((client (make-instance 'sc:slack-client)))
+    ;;; You can use :* for all event type;
+    ;;; (sc:bind :* client
+    ;;;   (lambda (ev) ...
     (sc:bind "hello" client
       (lambda (ev)
         (declare (ignore ev))

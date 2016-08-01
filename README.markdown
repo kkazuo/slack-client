@@ -1,6 +1,13 @@
-# Slack-Client
+# Slack-Client - Slack Real Time Messaging API Client
 
 ## Usage
+
+You can use roswell script examle.
+You should set the shell env variable ```SLACK_API_TOKEN```.
+
+```
+env SLACK_API_TOKEN='xoxb-...' ./client.ros
+```
 
 ## Installation
 

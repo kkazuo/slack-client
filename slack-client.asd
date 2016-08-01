@@ -27,7 +27,7 @@
   :components ((:module "src"
                 :components
                 ((:file "slack-client"))))
-  :description ""
+  :description "Slack Real Time Messaging API Client"
   :long-description
   #.(with-open-file (stream (merge-pathnames
                              #p"README.markdown"
